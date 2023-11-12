@@ -28,7 +28,6 @@
         "armv7-unknown-linux-gnueabihf",
         "aarch64-apple-darwin",
         "aarch64-linux-android",
-        "x86_64-unknown-freebsd",
         "aarch64-unknown-linux-musl",
         "aarch64-pc-windows-msvc",
         "armv7-linux-androideabi"
@@ -106,9 +105,6 @@
     "trailingComma": "all",
     "singleQuote": true,
     "arrowParens": "always"
-  },
-  "optionalDependencies": {
-
   },
   "packageManager": "yarn@4.0.1"
 }
