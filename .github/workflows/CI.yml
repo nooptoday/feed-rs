@@ -2,6 +2,7 @@ name: CI
 env:
   DEBUG: napi:*
   APP_NAME: '@nooptoday/feed-rs'
+  ARTIFACT_NAME: 'feed-rs'
   MACOSX_DEPLOYMENT_TARGET: '10.13'
 'on':
   push:
@@ -157,7 +158,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: ${{ env.APP_NAME }}.*.node
+          path: ${{ env.ARTIFACT_NAME }}.*.node
           if-no-files-found: error
   build-freebsd:
     runs-on: macos-12
@@ -203,7 +204,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: bindings-freebsd
-          path: ${{ env.APP_NAME }}.*.node
+          path: ${{ env.ARTIFACT_NAME }}.*.node
           if-no-files-found: error
   test-macOS-windows-binding:
     name: Test bindings on ${{ matrix.settings.target }} - node@${{ matrix.node }}
