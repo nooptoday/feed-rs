@@ -7,9 +7,9 @@
   "cpu": [
     "ia32"
   ],
-  "main": "@nooptoday/feed-rs.win32-ia32-msvc.node",
+  "main": "feed-rs.win32-ia32-msvc.node",
   "files": [
-    "@nooptoday/feed-rs.win32-ia32-msvc.node"
+    "feed-rs.win32-ia32-msvc.node"
   ],
   "description": "Node.js bindings for feed_rs",
   "keywords": [

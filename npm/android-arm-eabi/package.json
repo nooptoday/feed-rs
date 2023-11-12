@@ -7,9 +7,9 @@
   "cpu": [
     "arm"
   ],
-  "main": "@nooptoday/feed-rs.android-arm-eabi.node",
+  "main": "feed-rs.android-arm-eabi.node",
   "files": [
-    "@nooptoday/feed-rs.android-arm-eabi.node"
+    "feed-rs.android-arm-eabi.node"
   ],
   "description": "Node.js bindings for feed_rs",
   "keywords": [

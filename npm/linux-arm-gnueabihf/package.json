@@ -7,9 +7,9 @@
   "cpu": [
     "arm"
   ],
-  "main": "@nooptoday/feed-rs.linux-arm-gnueabihf.node",
+  "main": "feed-rs.linux-arm-gnueabihf.node",
   "files": [
-    "@nooptoday/feed-rs.linux-arm-gnueabihf.node"
+    "feed-rs.linux-arm-gnueabihf.node"
   ],
   "description": "Node.js bindings for feed_rs",
   "keywords": [

@@ -7,9 +7,9 @@
   "cpu": [
     "x64"
   ],
-  "main": "@nooptoday/feed-rs.linux-x64-gnu.node",
+  "main": "feed-rs.linux-x64-gnu.node",
   "files": [
-    "@nooptoday/feed-rs.linux-x64-gnu.node"
+    "feed-rs.linux-x64-gnu.node"
   ],
   "description": "Node.js bindings for feed_rs",
   "keywords": [

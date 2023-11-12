@@ -7,9 +7,9 @@
   "cpu": [
     "x64"
   ],
-  "main": "@nooptoday/feed-rs.win32-x64-msvc.node",
+  "main": "feed-rs.win32-x64-msvc.node",
   "files": [
-    "@nooptoday/feed-rs.win32-x64-msvc.node"
+    "feed-rs.win32-x64-msvc.node"
   ],
   "description": "Node.js bindings for feed_rs",
   "keywords": [

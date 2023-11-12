@@ -7,9 +7,9 @@
   "cpu": [
     "arm64"
   ],
-  "main": "@nooptoday/feed-rs.android-arm64.node",
+  "main": "feed-rs.android-arm64.node",
   "files": [
-    "@nooptoday/feed-rs.android-arm64.node"
+    "feed-rs.android-arm64.node"
   ],
   "description": "Node.js bindings for feed_rs",
   "keywords": [
