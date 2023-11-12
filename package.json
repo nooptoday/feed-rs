@@ -1,9 +1,9 @@
 {
-  "name": "@napi-rs/package-template",
+  "name": "@nooptoday/feed-rs",
   "version": "1.0.0",
-  "description": "Template project for writing node package with napi-rs",
+  "description": "Node.js bindings for feed_rs",
   "main": "index.js",
-  "repository": "git@github.com:napi-rs/package-template.git",
+  "repository": "git@github.com:nooptoday/feed-rs.git",
   "license": "MIT",
   "keywords": [
     "napi-rs",
@@ -18,7 +18,7 @@
     "index.js"
   ],
   "napi": {
-    "name": "package-template",
+    "name": "@nooptoday/feed-rs",
     "triples": {
       "defaults": true,
       "additional": [
@@ -107,5 +107,20 @@
     "singleQuote": true,
     "arrowParens": "always"
   },
-  "packageManager": "yarn@4.0.1"
+  "packageManager": "yarn@4.0.1",
+  "optionalDependencies": {
+    "@nooptoday/feed-rs-win32-x64-msvc": "1.0.0",
+    "@nooptoday/feed-rs-darwin-x64": "1.0.0",
+    "@nooptoday/feed-rs-linux-x64-gnu": "1.0.0",
+    "@nooptoday/feed-rs-linux-x64-musl": "1.0.0",
+    "@nooptoday/feed-rs-linux-arm64-gnu": "1.0.0",
+    "@nooptoday/feed-rs-win32-ia32-msvc": "1.0.0",
+    "@nooptoday/feed-rs-linux-arm-gnueabihf": "1.0.0",
+    "@nooptoday/feed-rs-darwin-arm64": "1.0.0",
+    "@nooptoday/feed-rs-android-arm64": "1.0.0",
+    "@nooptoday/feed-rs-freebsd-x64": "1.0.0",
+    "@nooptoday/feed-rs-linux-arm64-musl": "1.0.0",
+    "@nooptoday/feed-rs-win32-arm64-msvc": "1.0.0",
+    "@nooptoday/feed-rs-android-arm-eabi": "1.0.0"
+  }
 }

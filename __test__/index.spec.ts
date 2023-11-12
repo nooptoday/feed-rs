@@ -1,8 +1,15 @@
 import test from 'ava'
 
-import { plus100 } from '../index'
+import { parse } from '../index'
 
-test('sync function from native code', (t) => {
-  const fixture = 42
-  t.is(plus100(fixture), fixture + 100)
+test('sync function from native code', async (t) => {
+  const feed = await getRssData('https://nooptoday.com/rss')
+  const result = parse(feed, 'https://nooptoday.com')
+
+  t.assert(Array.isArray(result.entries))
 })
+
+async function getRssData(url: string): Promise<string> {
+  const response = await fetch(url)
+  return response.text()
+}
