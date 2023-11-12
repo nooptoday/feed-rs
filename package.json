@@ -107,20 +107,5 @@
     "singleQuote": true,
     "arrowParens": "always"
   },
-  "packageManager": "yarn@4.0.1",
-  "optionalDependencies": {
-    "@nooptoday/feed-rs-win32-x64-msvc": "1.0.0",
-    "@nooptoday/feed-rs-darwin-x64": "1.0.0",
-    "@nooptoday/feed-rs-linux-x64-gnu": "1.0.0",
-    "@nooptoday/feed-rs-linux-x64-musl": "1.0.0",
-    "@nooptoday/feed-rs-linux-arm64-gnu": "1.0.0",
-    "@nooptoday/feed-rs-win32-ia32-msvc": "1.0.0",
-    "@nooptoday/feed-rs-linux-arm-gnueabihf": "1.0.0",
-    "@nooptoday/feed-rs-darwin-arm64": "1.0.0",
-    "@nooptoday/feed-rs-android-arm64": "1.0.0",
-    "@nooptoday/feed-rs-freebsd-x64": "1.0.0",
-    "@nooptoday/feed-rs-linux-arm64-musl": "1.0.0",
-    "@nooptoday/feed-rs-win32-arm64-msvc": "1.0.0",
-    "@nooptoday/feed-rs-android-arm-eabi": "1.0.0"
-  }
+  "packageManager": "yarn@4.0.1"
 }
