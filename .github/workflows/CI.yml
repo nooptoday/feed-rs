@@ -1,7 +1,7 @@
 name: CI
 env:
   DEBUG: napi:*
-  APP_NAME: 'feed-rs'
+  APP_NAME: '@nooptoday/feed-rs'
   MACOSX_DEPLOYMENT_TARGET: '10.13'
 'on':
   push:
