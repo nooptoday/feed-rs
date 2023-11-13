@@ -372,6 +372,9 @@ jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
     needs:
       - test-macOS-windows-binding
       - test-linux-x64-gnu-binding
