@@ -2,27 +2,411 @@ use feed_rs::model;
 use napi_derive::napi;
 use num_traits::cast::FromPrimitive;
 
+/// Combined model for a syndication feed (i.e. RSS1, RSS 2, Atom, JSON Feed)
+///
+/// The model is based on the Atom standard as a start with RSS1+2 mapped on to it e.g.
+/// * Atom
+///     * Feed -> Feed
+///     * Entry -> Entry
+/// * RSS 1 + 2
+///     * Channel -> Feed
+///     * Item -> Entry
+///
+/// [Atom spec]: http://www.atomenabled.org/developers/syndication/
+/// [RSS 2 spec]: https://validator.w3.org/feed/docs/rss2.html
+/// [RSS 1 spec]: https://validator.w3.org/feed/docs/rss1.html
+/// [MediaRSS spec]: https://www.rssboard.org/media-rss
+/// [iTunes podcast spec]: https://help.apple.com/itc/podcasts_connect/#/itcb54353390
+/// [iTunes podcast guide]: https://www.feedforall.com/itune-tutorial-tags.htm
+///
+/// Certain elements are not mapped given their limited utility:
+///   * RSS 2:
+///     * channel - docs (pointer to the spec), cloud (for callbacks), textInput (text box e.g. for search)
+///     * item - comments (link to comments on the article), source (pointer to the channel, but our data model links items to a channel)
+///   * RSS 1:
+///     * channel - rdf:about attribute (pointer to feed), textinput (text box e.g. for search)
 #[derive(Debug)]
 #[napi(object)]
 pub struct Feed {
+  /// Type of this feed (e.g. RSS2, Atom etc)
   pub feed_type: FeedType,
+  /// A unique identifier for this feed
+  /// * Atom (required): Identifies the feed using a universally unique and permanent URI.
+  /// * RSS doesn't require an ID so it is initialised to the hash of the first link or a UUID if not found
   pub id: String,
+  /// The title of the feed
+  /// * Atom (required): Contains a human readable title for the feed. Often the same as the title of the associated website. This value should not be blank.
+  /// * RSS 1 + 2 (required) "title": The name of the channel. It's how people refer to your service.
+  /// * JSON Feed: is the name of the feed
   pub title: Option<Text>,
-  pub updated: Option<i64>, // RFC3339, ISO8601 compatible
+  /// The time at which the feed was last modified. If not provided in the source, or invalid, it is `None`.
+  /// * Atom (required): Indicates the last time the feed was modified in a significant way.
+  /// * RSS 2 (optional) "lastBuildDate": The last time the content of the channel changed.
+  pub updated: Option<i64>,
+
+  /// Atom (recommended): Collection of authors defined at the feed level.
+  /// JSON Feed: specifies the feed author.
   pub authors: Vec<Person>,
+  /// Description of the feed
+  /// * Atom (optional): Contains a human-readable description or subtitle for the feed (from <subtitle>).
+  /// * RSS 1 + 2 (required): Phrase or sentence describing the channel.
+  /// * JSON Feed: description of the feed
   pub description: Option<Text>,
+  /// Links to related pages
+  /// * Atom (recommended): Identifies a related Web page.
+  /// * RSS 1 + 2 (required): The URL to the HTML website corresponding to the channel.
+  /// * JSON Feed: the homepage and feed URLs
   pub links: Vec<Link>,
+
+  /// Structured classification of the feed
+  /// * Atom (optional): Specifies a category that the feed belongs to. A feed may have multiple category elements.
+  /// * RSS 2 (optional) "category": Specify one or more categories that the channel belongs to.
   pub categories: Vec<Category>,
+  /// People who have contributed to the feed
+  /// * Atom (optional): Names one contributor to the feed. A feed may have multiple contributor elements.
+  /// * RSS 2 (optional) "managingEditor": Email address for person responsible for editorial content.
+  /// * RSS 2 (optional) "webMaster": Email address for person responsible for technical issues relating to channel.
   pub contributors: Vec<Person>,
+  /// Information on the software used to build the feed
+  /// * Atom (optional): Identifies the software used to generate the feed, for debugging and other purposes.
+  /// * RSS 2 (optional): A string indicating the program used to generate the channel.
   pub generator: Option<Generator>,
+  /// A small icon
+  /// * Atom (optional): Identifies a small image which provides iconic visual identification for the feed.
+  /// * JSON Feed: is the URL of an image for the feed suitable to be used in a source list.
   pub icon: Option<Image>,
+  /// RSS 2 (optional): The language the channel is written in.
   pub language: Option<String>,
+  /// An image used to visually identify the feed
+  /// * Atom (optional): Identifies a larger image which provides visual identification for the feed.
+  /// * RSS 1 + 2 (optional) "image": Specifies a GIF, JPEG or PNG image that can be displayed with the channel.
+  /// * JSON Feed: is the URL of an image for the feed suitable to be used in a timeline
   pub logo: Option<Image>,
+  /// RSS 2 (optional): The publication date for the content in the channel.
   pub published: Option<i64>,
+  /// Rating for the content
+  /// * Populated from the media or itunes namespaces
   pub rating: Option<MediaRating>,
+  /// Rights restricting content within the feed
+  /// * Atom (optional): Conveys information about rights, e.g. copyrights, held in and over the feed.
+  /// * RSS 2 (optional) "copyright": Copyright notice for content in the channel.
   pub rights: Option<Text>,
+  /// RSS 2 (optional): It's a number of minutes that indicates how long a channel can be cached before refreshing from the source.
   pub ttl: Option<u32>,
+
+  /// The individual items within the feed
+  /// * Atom (optional): Individual entries within the feed (e.g. a blog post)
+  /// * RSS 1+2 (optional): Individual items within the channel.
   pub entries: Vec<Entry>,
+}
+
+/// Type of a feed (RSS, Atom etc)
+#[derive(Debug)]
+#[napi(string_enum)]
+pub enum FeedType {
+  Atom,
+  JSON,
+  RSS0,
+  RSS1,
+  RSS2,
+}
+
+/// An item within a feed
+#[derive(Debug)]
+#[napi(object)]
+pub struct Entry {
+  /// A unique identifier for this item with a feed. If not supplied it is initialised to a hash of the first link or a UUID if not available.
+  /// * Atom (required): Identifies the entry using a universally unique and permanent URI.
+  /// * RSS 2 (optional) "guid": A string that uniquely identifies the item.
+  /// * RSS 1: does not specify a unique ID as a separate item, but does suggest the URI should be "the same as the link" so we use a hash of the link if found
+  /// * JSON Feed: is unique for that item for that feed over time.
+  pub id: String,
+  /// Title of this item within the feed
+  /// * Atom, RSS 1(required): Contains a human readable title for the entry.
+  /// * RSS 2 (optional): The title of the item.
+  /// * JSON Feed: The title of the item.
+  pub title: Option<Text>,
+  /// Time at which this item was last modified. If not provided in the source, or invalid, it is `None`.
+  /// * Atom (required): Indicates the last time the entry was modified in a significant way.
+  /// * RSS doesn't specify this field.
+  /// * JSON Feed: the last modification date of this item
+  pub updated: Option<i64>,
+
+  /// Authors of this item
+  /// * Atom (recommended): Collection of authors defined at the entry level.
+  /// * RSS 2 (optional): Email address of the author of the item.
+  /// * JSON Feed: the author of the item
+  pub authors: Vec<Person>,
+  /// The content of the item
+  /// * Atom (recommended): Contains or links to the complete content of the entry.
+  /// * RSS 2 (optional) "content:encoded": The HTML form of the content
+  /// * JSON Feed: the html content of the item, or the text content if no html is specified
+  pub content: Option<Content>,
+  /// Links associated with this item
+  /// * Atom (recommended): Identifies a related Web page.
+  /// * RSS 2 (optional): The URL of the item.
+  /// * RSS 1 (required): The item's URL.
+  /// * JSON Feed: the url and external URL for the item is the first items, then each subsequent attachment
+  pub links: Vec<Link>,
+  /// A short summary of the item
+  /// * Atom (recommended): Conveys a short summary, abstract, or excerpt of the entry.
+  /// * RSS 1 (optional): Populated from the RSS namespace 'description' field, or if not present, the Dublin Core namespace 'description' field.
+  /// * RSS 2 (optional): Populated from the RSS namespace 'description' field.
+  /// * JSON Feed: the summary for the item, or the text content if no summary is provided and both text and html content are specified
+  ///
+  /// Warning: Some feeds (especially RSS) use significant whitespace in this field even in cases where it should be considered HTML. Consider rendering this field in a way that preserves whitespace-based formatting such as a double-newline to separate paragraphs.
+  pub summary: Option<Text>,
+
+  /// Structured classification of the item
+  /// * Atom (optional): Specifies a category that the entry belongs to. A feed may have multiple category elements.
+  /// * RSS 2 (optional): Includes the item in one or more categories.
+  /// * JSON Feed: the supplied item tags
+  pub categories: Vec<Category>,
+  /// Atom (optional): Names one contributor to the entry. A feed may have multiple contributor elements.
+  pub contributors: Vec<Person>,
+  /// Time at which this item was first published
+  /// * Atom (optional): Contains the time of the initial creation or first availability of the entry.
+  /// * RSS 2 (optional) "pubDate": Indicates when the item was published.
+  /// * JSON Feed: the date at which the item was published
+  pub published: Option<i64>,
+  /// Atom (optional): If an entry is copied from one feed into another feed, then this contains the source feed metadata.
+  pub source: Option<String>,
+  /// Atom (optional): Conveys information about rights, e.g. copyrights, held in and over the feed.
+  pub rights: Option<Text>,
+
+  /// Extension for MediaRSS - https://www.rssboard.org/media-rss
+  /// A MediaObject will be created in two cases:
+  /// 1) each "media:group" element encountered in the feed
+  /// 2) a default for any other "media:*" elements found at the item level
+  /// See the Atom tests for youtube and newscred for examples
+  pub media: Vec<MediaObject>,
+}
+
+/// Represents the category of a feed or entry
+///
+/// [Atom spec]: http://www.atomenabled.org/developers/syndication/#category
+/// [RSS 2 spec]: https://validator.w3.org/feed/docs/rss2.html#ltcategorygtSubelementOfLtitemgt
+#[derive(Debug)]
+#[napi(object)]
+pub struct Category {
+  /// The category as a human readable string
+  /// * Atom (required): Identifies the category.
+  /// * RSS 2: The value of the element is a forward-slash-separated string that identifies a hierarchic location in the indicated taxonomy. Processors may establish conventions for the interpretation of categories.
+  /// * JSON Feed: the value of the tag
+  pub term: String,
+  /// Atom (optional): Identifies the categorization scheme via a URI.
+  pub scheme: Option<String>,
+  /// Atom (optional): Provides a human-readable label for display.
+  pub label: Option<String>,
+}
+
+/// Content, or link to the content, for a given entry.
+///
+/// [Atom spec]: http://www.atomenabled.org/developers/syndication/#contentElement
+/// [RSS 2.0]: https://validator.w3.org/feed/docs/rss2.html#ltenclosuregtSubelementOfLtitemgt
+#[derive(Debug)]
+#[napi(object)]
+pub struct Content {
+  /// Atom
+  /// * If the type attribute ends in +xml or /xml, then an xml document of this type is contained inline.
+  /// * If the type attribute starts with text, then an escaped document of this type is contained inline.
+  /// * Otherwise a base64 encoded document of the indicated media type is contained inline.
+  pub body: Option<String>,
+  /// Type of content
+  /// * Atom: The type attribute is either text, html, xhtml, in which case the content element is defined identically to other text constructs.
+  /// * RSS 2: Type says what its type is, a standard MIME type
+  pub content_type: String,
+  /// RSS 2.0: Length of the content in bytes
+  pub length: Option<i64>,
+  /// Source of the content
+  /// * Atom: If the src attribute is present, it represents the URI of where the content can be found. The type attribute, if present, is the media type of the content.
+  /// * RSS 2.0: where the enclosure is located
+  pub src: Option<Link>,
+}
+
+/// Information on the tools used to generate the feed
+///
+/// Atom: Identifies the software used to generate the feed, for debugging and other purposes.
+#[derive(Debug)]
+#[napi(object)]
+pub struct Generator {
+  /// Atom: Additional data
+  /// RSS 2: A string indicating the program used to generate the channel.
+  pub content: String,
+  /// Atom: Link to the tool
+  pub uri: Option<String>,
+  /// Atom: Tool version
+  pub version: Option<String>,
+}
+
+/// Represents a a link to an image.
+///
+/// [Atom spec]:  http://www.atomenabled.org/developers/syndication/#optionalFeedElements
+/// [RSS 2 spec]: https://validator.w3.org/feed/docs/rss2.html#ltimagegtSubelementOfLtchannelgt
+/// [RSS 1 spec]: https://validator.w3.org/feed/docs/rss1.html#s5.4
+#[derive(Debug)]
+#[napi(object)]
+pub struct Image {
+  /// Link to the image
+  /// * Atom: The URL to an image or logo
+  /// * RSS 1 + 2: the URL of a GIF, JPEG or PNG image that represents the channel.
+  pub uri: String,
+  /// RSS 1 + 2: describes the image, it's used in the ALT attribute of the HTML <img> tag when the channel is rendered in HTML.
+  pub title: Option<String>,
+  /// RSS 1 + 2: the URL of the site, when the channel is rendered, the image is a link to the site.
+  pub link: Option<Link>,
+
+  /// RSS 2 (optional): width of the image
+  pub width: Option<u32>,
+  /// RSS 2 (optional): height of the image
+  pub height: Option<u32>,
+  /// RSS 2 (optional): contains text that is included in the TITLE attribute of the link formed around the image in the HTML rendering.
+  pub description: Option<String>,
+}
+
+/// Represents a link to an associated resource for the feed or entry.
+///
+/// [Atom spec]: http://www.atomenabled.org/developers/syndication/#link
+#[derive(Debug)]
+#[napi(object)]
+pub struct Link {
+  /// Link to additional content
+  /// * Atom: The URI of the referenced resource (typically a Web page).
+  /// * RSS 2: The URL to the HTML website corresponding to the channel or item.
+  /// * JSON Feed: the URI to the attachment, feed etc
+  pub href: String,
+  /// A single link relationship type.
+  pub rel: Option<String>,
+  /// Indicates the media type of the resource.
+  pub media_type: Option<String>,
+  /// Indicates the language of the referenced resource.
+  pub href_lang: Option<String>,
+  /// Human readable information about the link, typically for display purposes.
+  pub title: Option<String>,
+  /// The length of the resource, in bytes.
+  pub length: Option<i64>,
+}
+
+/// The top-level representation of a media object
+/// i.e. combines "media:*" elements from the RSS Media spec such as those under a media:group
+#[derive(Debug)]
+#[napi(object)]
+pub struct MediaObject {
+  /// Title of the object (from the media:title element)
+  pub title: Option<Text>,
+  /// Collection of the media content elements
+  pub content: Vec<MediaContent>,
+  /// Duration of the object
+  pub duration: Option<i64>,
+  /// Representative images for the object (from media:thumbnail elements)
+  pub thumbnails: Vec<MediaThumbnail>,
+  /// A text transcript, closed captioning or lyrics of the media content.
+  pub texts: Vec<MediaText>,
+  /// Short description of the media object (from the media:description element)
+  pub description: Option<Text>,
+  /// Community info (from the media:community element)
+  pub community: Option<MediaCommunity>,
+  /// Credits
+  pub credits: Vec<MediaCredit>,
+}
+
+/// Represents a "media:community" item from the RSS Media spec
+#[derive(Debug)]
+#[napi(object)]
+pub struct MediaCommunity {
+  /// Star rating
+  pub stars_avg: Option<f64>,
+  pub stars_count: Option<i32>,
+  pub stars_min: Option<i32>,
+  pub stars_max: Option<i32>,
+
+  /// Statistics on engagement
+  pub stats_views: Option<i32>,
+  pub stats_favorites: Option<i32>,
+}
+
+/// Represents a "media:content" item from the RSS Media spec
+#[derive(Debug)]
+#[napi(object)]
+pub struct MediaContent {
+  /// The direct URL
+  pub url: Option<String>,
+  /// Standard MIME type
+  pub content_type: Option<String>,
+  /// Height and width
+  pub height: Option<u32>,
+  pub width: Option<u32>,
+  /// Duration the media plays
+  pub duration: Option<i64>,
+  /// Size of media in bytes
+  pub size: Option<i64>,
+  /// Rating
+  pub rating: Option<MediaRating>,
+}
+
+/// Represents a "media:credit" item from the RSS Media spec
+#[derive(Debug)]
+#[napi(object)]
+pub struct MediaCredit {
+  /// The entity being credited
+  pub entity: String,
+}
+
+/// Rating of the feed, item or media within the content
+#[derive(Debug)]
+#[napi(object)]
+pub struct MediaRating {
+  // The scheme (defaults to "simple" per the spec)
+  pub urn: String,
+  // The rating text
+  pub value: String,
+}
+
+/// Represents a "media:text" item from the RSS Media spec
+#[derive(Debug)]
+#[napi(object)]
+pub struct MediaText {
+  /// The text
+  pub text: Text,
+  /// The start time offset that the text starts being relevant to the media object.
+  pub start_time: Option<i64>,
+  /// The end time that the text is relevant. If this attribute is not provided, and a start time is used, it is expected that the end time is either the end of the clip or the start of the next <media:text> element.
+  pub end_time: Option<i64>,
+}
+
+/// Represents a "media:thumbnail" item from the RSS Media spec
+#[derive(Debug)]
+#[napi(object)]
+pub struct MediaThumbnail {
+  /// The thumbnail image
+  pub image: Image,
+  /// The time this thumbnail represents
+  pub time: Option<i64>,
+}
+
+/// Represents an author, contributor etc.
+///
+/// [Atom spec]: http://www.atomenabled.org/developers/syndication/#person
+#[derive(Debug)]
+#[napi(object)]
+pub struct Person {
+  /// Atom: human-readable name for the person.
+  /// JSON Feed: human-readable name for the person.
+  pub name: String,
+  /// Atom: home page for the person.
+  /// JSON Feed: link to media (Twitter etc) for the person
+  pub uri: Option<String>,
+  /// Atom: An email address for the person.
+  pub email: Option<String>,
+}
+
+/// Textual content, or link to the content, for a given entry.
+#[derive(Debug)]
+#[napi(object)]
+pub struct Text {
+  pub content_type: String,
+  pub src: Option<String>,
+  pub content: String,
 }
 
 impl From<model::Feed> for Feed {
@@ -70,14 +454,6 @@ impl From<model::Feed> for Feed {
   }
 }
 
-#[derive(Debug)]
-#[napi(object)]
-pub struct Generator {
-  pub content: String,
-  pub uri: Option<String>,
-  pub version: Option<String>,
-}
-
 impl From<model::Generator> for Generator {
   fn from(value: model::Generator) -> Self {
     Self {
@@ -86,17 +462,6 @@ impl From<model::Generator> for Generator {
       version: value.version,
     }
   }
-}
-
-#[derive(Debug)]
-#[napi(object)]
-pub struct Link {
-  pub href: String,
-  pub rel: Option<String>,
-  pub media_type: Option<String>,
-  pub href_lang: Option<String>,
-  pub title: Option<String>,
-  pub length: Option<i64>, // Originally u64, might need explicit conversion to prevent errors.
 }
 
 impl From<model::Link> for Link {
@@ -112,14 +477,6 @@ impl From<model::Link> for Link {
   }
 }
 
-#[derive(Debug)]
-#[napi(object)]
-pub struct Category {
-  pub term: String,
-  pub scheme: Option<String>,
-  pub label: Option<String>,
-}
-
 impl From<model::Category> for Category {
   fn from(value: model::Category) -> Self {
     Self {
@@ -130,14 +487,6 @@ impl From<model::Category> for Category {
   }
 }
 
-#[derive(Debug)]
-#[napi(object)]
-pub struct Person {
-  pub name: String,
-  pub uri: Option<String>,
-  pub email: Option<String>,
-}
-
 impl From<model::Person> for Person {
   fn from(value: model::Person) -> Self {
     Self {
@@ -146,16 +495,6 @@ impl From<model::Person> for Person {
       email: value.email,
     }
   }
-}
-
-#[derive(Debug)]
-#[napi(string_enum)]
-pub enum FeedType {
-  Atom,
-  JSON,
-  RSS0,
-  RSS1,
-  RSS2,
 }
 
 impl From<model::FeedType> for FeedType {
@@ -170,15 +509,6 @@ impl From<model::FeedType> for FeedType {
   }
 }
 
-#[derive(Debug)]
-#[napi(object)]
-pub struct Text {
-  pub content_type: String,
-  // Mime
-  pub src: Option<String>,
-  pub content: String,
-}
-
 impl From<model::Text> for Text {
   fn from(value: model::Text) -> Self {
     Self {
@@ -187,24 +517,6 @@ impl From<model::Text> for Text {
       content_type: value.content_type.to_string(),
     }
   }
-}
-
-#[derive(Debug)]
-#[napi(object)]
-pub struct Entry {
-  pub id: String,
-  pub title: Option<Text>,
-  pub updated: Option<i64>,
-  pub authors: Vec<Person>,
-  pub content: Option<Content>,
-  pub links: Vec<Link>,
-  pub summary: Option<Text>,
-  pub categories: Vec<Category>,
-  pub contributors: Vec<Person>,
-  pub published: Option<i64>,
-  pub source: Option<String>,
-  pub rights: Option<Text>,
-  pub media: Vec<MediaObject>,
 }
 
 impl From<model::Entry> for Entry {
@@ -249,40 +561,17 @@ impl From<model::Entry> for Entry {
   }
 }
 
-#[derive(Debug)]
-#[napi(object)]
-pub struct Image {
-  pub uri: String,
-  pub title: Option<String>,
-  pub link: Option<String>,
-  pub width: Option<u32>,
-  pub height: Option<u32>,
-  pub description: Option<String>,
-}
-
 impl From<model::Image> for Image {
   fn from(value: model::Image) -> Self {
     Self {
       uri: value.uri,
       description: value.description,
       height: value.height,
-      link: value.link.map(|link| link.href),
+      link: value.link.map(|link| Link::from(link)),
       title: value.title,
       width: value.width,
     }
   }
-}
-
-#[derive(Debug)]
-#[napi(object)]
-pub struct MediaContent {
-  pub url: Option<String>,
-  pub content_type: Option<String>,
-  pub height: Option<u32>,
-  pub width: Option<u32>,
-  pub duration: Option<i64>,
-  pub size: Option<i64>,
-  pub rating: Option<MediaRating>,
 }
 
 impl From<model::MediaContent> for MediaContent {
@@ -303,13 +592,6 @@ impl From<model::MediaContent> for MediaContent {
   }
 }
 
-#[derive(Debug)]
-#[napi(object)]
-pub struct MediaRating {
-  pub urn: String,
-  pub value: String,
-}
-
 impl From<model::MediaRating> for MediaRating {
   fn from(value: model::MediaRating) -> Self {
     Self {
@@ -319,37 +601,15 @@ impl From<model::MediaRating> for MediaRating {
   }
 }
 
-#[derive(Debug)]
-#[napi(object)]
-pub struct Content {
-  pub body: Option<String>,
-  pub content_type: String,
-  pub length: Option<i64>,
-  pub src: Option<String>,
-}
-
 impl From<model::Content> for Content {
   fn from(value: model::Content) -> Self {
     Self {
       content_type: value.content_type.to_string(),
       body: value.body,
       length: value.length.map(|length| i64::from_u64(length).unwrap()),
-      src: value.src.map(|src| src.href),
+      src: value.src.map(|src| Link::from(src)),
     }
   }
-}
-
-#[derive(Debug)]
-#[napi(object)]
-pub struct MediaObject {
-  pub title: Option<Text>,
-  pub content: Vec<MediaContent>,
-  pub duration: Option<i64>,
-  pub thumbnails: Vec<MediaThumbnail>,
-  pub texts: Vec<MediaText>,
-  pub description: Option<Text>,
-  pub community: Option<MediaCommunity>,
-  pub credits: Vec<MediaCredit>,
 }
 
 impl From<model::MediaObject> for MediaObject {
@@ -383,17 +643,6 @@ impl From<model::MediaObject> for MediaObject {
   }
 }
 
-#[derive(Debug)]
-#[napi(object)]
-pub struct MediaCommunity {
-  pub stars_avg: Option<f64>,
-  pub stars_count: Option<i32>,
-  pub stars_min: Option<i32>,
-  pub stars_max: Option<i32>,
-  pub stats_views: Option<i32>,
-  pub stats_favorites: Option<i32>,
-}
-
 impl From<model::MediaCommunity> for MediaCommunity {
   fn from(value: model::MediaCommunity) -> Self {
     Self {
@@ -417,14 +666,6 @@ impl From<model::MediaCommunity> for MediaCommunity {
   }
 }
 
-#[derive(Debug)]
-#[napi(object)]
-pub struct MediaText {
-  pub text: Text,
-  pub start_time: Option<i64>,
-  pub end_time: Option<i64>,
-}
-
 impl From<model::MediaText> for MediaText {
   fn from(value: model::MediaText) -> Self {
     Self {
@@ -439,13 +680,6 @@ impl From<model::MediaText> for MediaText {
   }
 }
 
-#[derive(Debug)]
-#[napi(object)]
-pub struct MediaThumbnail {
-  pub image: Image,
-  pub time: Option<i64>,
-}
-
 impl From<model::MediaThumbnail> for MediaThumbnail {
   fn from(value: model::MediaThumbnail) -> Self {
     Self {
@@ -455,12 +689,6 @@ impl From<model::MediaThumbnail> for MediaThumbnail {
         .map(|time| i64::from_u128(time.as_millis()).unwrap()),
     }
   }
-}
-
-#[derive(Debug)]
-#[napi(object)]
-pub struct MediaCredit {
-  pub entity: String,
 }
 
 impl From<model::MediaCredit> for MediaCredit {

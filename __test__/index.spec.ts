@@ -4,8 +4,8 @@ import test from 'ava'
 
 import { parse } from '../index'
 
-test('sync function from native code', (t) => {
-  const feed = getFeedXML()
+test('Basic parse', (t) => {
+  const feed = readFileSync('feed.xml', 'utf-8')
   const result = parse(feed, 'https://nooptoday.com')
 
   t.assert(result.title?.contentType === 'text/plain')
@@ -16,14 +16,3 @@ test('sync function from native code', (t) => {
 
   t.assert(Array.isArray(result.entries))
 })
-
-let feed: string
-
-function getFeedXML(): string {
-  if (feed) {
-    return feed
-  }
-  feed = readFileSync('feed.xml', 'utf-8')
-
-  return feed
-}

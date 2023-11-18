@@ -19,14 +19,13 @@ const feed = parse(rss, 'https://nooptoday.com')
 
 console.log(feed) // Feed Object
 ```
----
-
-Timestamps are converted to i64 fields
 
 ## Benchmark
 
+Test results are obtained from a local M2 Air installation.
+
 ```
-feed-rs         1362 ops/s, ±0.25%    | fastest
-rss-parser:     76 ops/s, ±0.16%      | slowest, 94.42% slower
-fast-xml-parser 682 ops/s, ±0.32%     | 49.93% slower
+feed-rs          2367 ops/s, ±0.39%   | fastest
+fast-xml-parser  1198 ops/s, ±0.26%   | 49.39% slower
+rss-parser:      125 ops/s,  ±2.27%   | slowest, 94.72% slower
 ```
