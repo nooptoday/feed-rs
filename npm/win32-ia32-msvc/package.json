@@ -1,6 +1,6 @@
 {
   "name": "@nooptoday/feed-rs-win32-ia32-msvc",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "os": [
     "win32"
   ],
@@ -11,8 +11,27 @@
   "files": [
     "feed-rs.win32-ia32-msvc.node"
   ],
-  "description": "Node.js bindings for feed_rs",
+  "description": "Fastest RSS parser with the power of Rust. This package includes Node.js bindings from feed_rs package",
+  "author": {
+    "name": "Muhammed Kadir Tan",
+    "url": "https://nooptoday.com",
+    "email": "admin@nooptoday.com"
+  },
+  "bugs": {
+    "email": "admin@nooptoday.com",
+    "url": "https://github.com/nooptoday/feed-rs/issues"
+  },
   "keywords": [
+    "RSS",
+    "RSS to JSON",
+    "RSS reader",
+    "RSS parser",
+    "RSS to JS",
+    "Feed reader",
+    "Atom",
+    "Syndication",
+    "Feed",
+    "JSON Feed",
     "napi-rs",
     "NAPI",
     "N-API",

@@ -1,8 +1,21 @@
+# Fastest RSS parser in the NPM 🚀
+
+Thanks to the power of Rust and the upstream repository authors, this package is the fastest RSS parser you can find.
+
 ## Description
 
-Node.js bindings for [feed_rs](https://github.com/feed-rs/feed-rs).
+Feed parser for Node.js. List of supported feeds
 
-This package is the fastest RSS parser in NPM.
+- RSS0
+- RSS1
+- RSS2
+- Atom
+- JSON
+
+This package contains Node.js bindings from the Rust crate [feed_rs](https://github.com/feed-rs/feed-rs).
+
+I've tried to be as much compliant as possible with the original package's models. The Rust crate also contains lots
+of helpful comments, which I've also included in this package.
 
 ## Installation
 
@@ -18,6 +31,21 @@ const rss = await response.text()
 const feed = parse(rss, 'https://nooptoday.com')
 
 console.log(feed) // Feed Object
+```
+
+## Error Handling
+
+As long as the input contains valid feed data, there shouldn't be any errors. In case something goes wrong, these
+are all the possible errors you might encounter.
+
+```
+no root element
+unsupported content type {mime}
+missing content element {element}
+unable to read feed: {reason}
+unable to parse JSON: {reason}
+unsupported version: {version}
+unable to parse XML: {reason}
 ```
 
 ## Benchmark
