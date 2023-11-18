@@ -1,21 +1,29 @@
+import { readFileSync } from 'fs'
+
 import b from 'benny'
+import { XMLParser } from 'fast-xml-parser'
+import Parser from 'rss-parser'
 
-import { plus100 } from '../index'
-
-function add(a: number) {
-  return a + 100
-}
+import { parse } from '../index'
 
 async function run() {
-  await b.suite(
-    'Add 100',
+  const feed = readFileSync('feed.xml', 'utf-8')
+  const xmlParser = new XMLParser()
+  const rssParser = new Parser()
 
-    b.add('Native a + 100', () => {
-      plus100(10)
+  await b.suite(
+    'Feed parsing',
+
+    b.add('FeedRS', () => {
+      parse(feed)
     }),
 
-    b.add('JavaScript a + 100', () => {
-      add(10)
+    b.add('RssParser', async () => {
+      await rssParser.parseString(feed)
+    }),
+
+    b.add('FastXMLParser', () => {
+      xmlParser.parse(feed)
     }),
 
     b.cycle(),

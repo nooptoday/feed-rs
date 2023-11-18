@@ -6,21 +6,45 @@
 export interface Feed {
   feedType: FeedType
   id: string
+  title?: Text
   updated?: number
-  authors: Array<string>
-  description?: string
-  links: Array<string>
-  categories: Array<string>
-  contributors: Array<string>
-  generator?: string
+  authors: Array<Person>
+  description?: Text
+  links: Array<Link>
+  categories: Array<Category>
+  contributors: Array<Person>
+  generator?: Generator
   icon?: Image
   language?: string
   logo?: Image
   published?: number
   rating?: MediaRating
-  rights?: string
+  rights?: Text
   ttl?: number
   entries: Array<Entry>
+}
+export interface Generator {
+  content: string
+  uri?: string
+  version?: string
+}
+export interface Link {
+  href: string
+  rel?: string
+  mediaType?: string
+  hrefLang?: string
+  title?: string
+  length?: number
+}
+export interface Category {
+  term: string
+  scheme?: string
+  label?: string
+}
+export interface Person {
+  name: string
+  uri?: string
+  email?: string
 }
 export const enum FeedType {
   Atom = 'Atom',
@@ -29,19 +53,24 @@ export const enum FeedType {
   RSS1 = 'RSS1',
   RSS2 = 'RSS2',
 }
+export interface Text {
+  contentType: string
+  src?: string
+  content: string
+}
 export interface Entry {
   id: string
-  title?: string
+  title?: Text
   updated?: number
-  authors: Array<string>
+  authors: Array<Person>
   content?: Content
-  links: Array<string>
-  summary?: string
-  categories: Array<string>
-  contributors: Array<string>
+  links: Array<Link>
+  summary?: Text
+  categories: Array<Category>
+  contributors: Array<Person>
   published?: number
   source?: string
-  rights?: string
+  rights?: Text
   media: Array<MediaObject>
 }
 export interface Image {
@@ -72,12 +101,33 @@ export interface Content {
   src?: string
 }
 export interface MediaObject {
-  title?: string
+  title?: Text
   content: Array<MediaContent>
   duration?: number
-  thumbnails: Array<Image>
-  texts: Array<string>
-  description?: string
-  credits: Array<string>
+  thumbnails: Array<MediaThumbnail>
+  texts: Array<MediaText>
+  description?: Text
+  community?: MediaCommunity
+  credits: Array<MediaCredit>
+}
+export interface MediaCommunity {
+  starsAvg?: number
+  starsCount?: number
+  starsMin?: number
+  starsMax?: number
+  statsViews?: number
+  statsFavorites?: number
+}
+export interface MediaText {
+  text: Text
+  startTime?: number
+  endTime?: number
+}
+export interface MediaThumbnail {
+  image: Image
+  time?: number
+}
+export interface MediaCredit {
+  entity: string
 }
 export function parse(feedString: string, feedSource?: string | undefined | null): Feed
