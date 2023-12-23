@@ -49,7 +49,7 @@ export interface Feed {
    * * Atom (required): Indicates the last time the feed was modified in a significant way.
    * * RSS 2 (optional) "lastBuildDate": The last time the content of the channel changed.
    */
-  updated?: number
+  updated?: Date
   /**
    * Atom (recommended): Collection of authors defined at the feed level.
    * JSON Feed: specifies the feed author.
@@ -104,7 +104,7 @@ export interface Feed {
    */
   logo?: Image
   /** RSS 2 (optional): The publication date for the content in the channel. */
-  published?: number
+  published?: Date
   /**
    * Rating for the content
    * * Populated from the media or itunes namespaces
@@ -156,7 +156,7 @@ export interface Entry {
    * * RSS doesn't specify this field.
    * * JSON Feed: the last modification date of this item
    */
-  updated?: number
+  updated?: Date
   /**
    * Authors of this item
    * * Atom (recommended): Collection of authors defined at the entry level.
@@ -204,7 +204,7 @@ export interface Entry {
    * * RSS 2 (optional) "pubDate": Indicates when the item was published.
    * * JSON Feed: the date at which the item was published
    */
-  published?: number
+  published?: Date
   /** Atom (optional): If an entry is copied from one feed into another feed, then this contains the source feed metadata. */
   source?: string
   /** Atom (optional): Conveys information about rights, e.g. copyrights, held in and over the feed. */

@@ -1,7 +1,7 @@
 mod models;
 
 use feed_rs::parser;
-use napi::Error;
+use napi::{Env, Error};
 use napi_derive::napi;
 use std::option::Option;
 
@@ -24,14 +24,18 @@ use std::option::Option;
 /// @exception Error unsupported version: {version}
 /// @exception Error unable to parse XML: {reason}
 #[napi]
-pub fn parse(feed_string: String, feed_source: Option<String>) -> Result<models::Feed, Error> {
+pub fn parse(
+  env: Env,
+  feed_string: String,
+  feed_source: Option<String>,
+) -> Result<models::Feed, Error> {
   let result = parser::parse_with_uri(
     feed_string.as_bytes(),
     feed_source.as_ref().map(|source| source.as_str()),
   );
 
   match result {
-    Ok(feed) => Ok(models::Feed::from(feed)),
+    Ok(feed) => Ok(models::Feed::from(env, feed)),
     Err(err) => Err(Error::from_reason(err.to_string())),
   }
 }

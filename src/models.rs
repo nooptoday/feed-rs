@@ -1,4 +1,5 @@
 use feed_rs::model;
+use napi::{Env, JsDate};
 use napi_derive::napi;
 use num_traits::cast::FromPrimitive;
 
@@ -25,7 +26,7 @@ use num_traits::cast::FromPrimitive;
 ///     * item - comments (link to comments on the article), source (pointer to the channel, but our data model links items to a channel)
 ///   * RSS 1:
 ///     * channel - rdf:about attribute (pointer to feed), textinput (text box e.g. for search)
-#[derive(Debug)]
+// #[derive(Debug)]
 #[napi(object)]
 pub struct Feed {
   /// Type of this feed (e.g. RSS2, Atom etc)
@@ -42,7 +43,7 @@ pub struct Feed {
   /// The time at which the feed was last modified. If not provided in the source, or invalid, it is `None`.
   /// * Atom (required): Indicates the last time the feed was modified in a significant way.
   /// * RSS 2 (optional) "lastBuildDate": The last time the content of the channel changed.
-  pub updated: Option<i64>,
+  pub updated: Option<JsDate>,
 
   /// Atom (recommended): Collection of authors defined at the feed level.
   /// JSON Feed: specifies the feed author.
@@ -83,7 +84,7 @@ pub struct Feed {
   /// * JSON Feed: is the URL of an image for the feed suitable to be used in a timeline
   pub logo: Option<Image>,
   /// RSS 2 (optional): The publication date for the content in the channel.
-  pub published: Option<i64>,
+  pub published: Option<JsDate>,
   /// Rating for the content
   /// * Populated from the media or itunes namespaces
   pub rating: Option<MediaRating>,
@@ -112,7 +113,7 @@ pub enum FeedType {
 }
 
 /// An item within a feed
-#[derive(Debug)]
+// #[derive(Debug)]
 #[napi(object)]
 pub struct Entry {
   /// A unique identifier for this item with a feed. If not supplied it is initialised to a hash of the first link or a UUID if not available.
@@ -130,7 +131,7 @@ pub struct Entry {
   /// * Atom (required): Indicates the last time the entry was modified in a significant way.
   /// * RSS doesn't specify this field.
   /// * JSON Feed: the last modification date of this item
-  pub updated: Option<i64>,
+  pub updated: Option<JsDate>,
 
   /// Authors of this item
   /// * Atom (recommended): Collection of authors defined at the entry level.
@@ -168,7 +169,7 @@ pub struct Entry {
   /// * Atom (optional): Contains the time of the initial creation or first availability of the entry.
   /// * RSS 2 (optional) "pubDate": Indicates when the item was published.
   /// * JSON Feed: the date at which the item was published
-  pub published: Option<i64>,
+  pub published: Option<JsDate>,
   /// Atom (optional): If an entry is copied from one feed into another feed, then this contains the source feed metadata.
   pub source: Option<String>,
   /// Atom (optional): Conveys information about rights, e.g. copyrights, held in and over the feed.
@@ -409,13 +410,17 @@ pub struct Text {
   pub content: String,
 }
 
-impl From<model::Feed> for Feed {
-  fn from(feed: model::Feed) -> Self {
+impl Feed {
+  pub fn from(env: Env, feed: model::Feed) -> Self {
     Self {
       feed_type: FeedType::from(feed.feed_type),
       id: feed.id,
       title: feed.title.map(|title| Text::from(title)),
-      updated: feed.updated.map(|updated| updated.timestamp_millis()),
+      updated: feed.updated.map(|updated| {
+        f64::from_i64(updated.timestamp_millis())
+          .and_then(|timestamp| env.create_date(timestamp).ok())
+          .unwrap()
+      }),
       authors: feed
         .authors
         .into_iter()
@@ -441,14 +446,18 @@ impl From<model::Feed> for Feed {
       icon: feed.icon.map(|icon| Image::from(icon)),
       language: feed.language,
       logo: feed.logo.map(|logo| Image::from(logo)),
-      published: feed.published.map(|published| published.timestamp_millis()),
+      published: feed.published.map(|published| {
+        f64::from_i64(published.timestamp_millis())
+          .and_then(|timestamp| env.create_date(timestamp).ok())
+          .unwrap()
+      }),
       rating: feed.rating.map(|rating| MediaRating::from(rating)),
       rights: feed.rights.map(|right| Text::from(right)),
       ttl: feed.ttl,
       entries: feed
         .entries
         .into_iter()
-        .map(|entry| Entry::from(entry))
+        .map(|entry| Entry::from(env, entry))
         .collect(),
     }
   }
@@ -519,12 +528,16 @@ impl From<model::Text> for Text {
   }
 }
 
-impl From<model::Entry> for Entry {
-  fn from(value: model::Entry) -> Self {
+impl Entry {
+  pub fn from(env: Env, value: model::Entry) -> Self {
     Self {
       id: value.id,
       title: value.title.map(|title| Text::from(title)),
-      updated: value.updated.map(|updated| updated.timestamp_millis()),
+      updated: value.updated.map(|updated| {
+        f64::from_i64(updated.timestamp_millis())
+          .and_then(|timestamp| env.create_date(timestamp).ok())
+          .unwrap()
+      }),
       authors: value
         .authors
         .into_iter()
@@ -547,9 +560,11 @@ impl From<model::Entry> for Entry {
         .into_iter()
         .map(|contributor| Person::from(contributor))
         .collect(),
-      published: value
-        .published
-        .map(|published| published.timestamp_millis()),
+      published: value.published.map(|published| {
+        f64::from_i64(published.timestamp_millis())
+          .and_then(|timestamp| env.create_date(timestamp).ok())
+          .unwrap()
+      }),
       source: value.source,
       rights: value.rights.map(|right| Text::from(right)),
       media: value
